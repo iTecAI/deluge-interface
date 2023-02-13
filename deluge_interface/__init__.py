@@ -101,11 +101,6 @@ class Deluge:
             list[str]: List of RPC methods
         """
         return self._call("system.listMethods", [])
-
-        
-
-# Tests
-if __name__ == "__main__":
-    deluge = Deluge("https://media.daxcode.org", "Mi$ita5nb")
-    print(deluge.session_id)
-    print(deluge.methods)
+    
+    def add_magnet(self, magnet: str) -> str:
+        return self._call("core.add_torrent_magnet", [magnet])
