@@ -128,12 +128,37 @@ class Deluge:
         return self._call("system.listMethods", [])
     
     def add_magnet(self, magnet: str, **kwargs) -> Torrent:
+        """Add magnet URL
+
+        Args:
+            magnet (str): Magnet URI
+
+        Returns:
+            Torrent: Torrent object
+        """
         return Torrent(self, self._call("core.add_torrent_magnet", [magnet, kwargs]))
     
     def add_torrent_from_url(self, url: str, headers: dict = None, **kwargs) -> Torrent:
+        """Add torrent from URL to .torrent file
+
+        Args:
+            url (str): Url to Torrent
+            headers (dict, optional): Dictionary of additional headers to pass. Defaults to None.
+
+        Returns:
+            Torrent: Torrent object
+        """
         return Torrent(self, self._call("core.add_torrent_url", [url, kwargs, headers]))
     
     def add_torrent_from_file(self, *path, **kwargs) -> Torrent:
+        """Add torrent from path
+        
+        Args:
+            path (*str): Path or paths to join
+
+        Returns:
+            Torrent: Torrent object
+        """
         conpath = os.path.join(*path)
         filename = os.path.split(conpath)[1]
         with open(conpath, "rb") as f:
@@ -141,11 +166,36 @@ class Deluge:
             return Torrent(self, self._call("core.add_torrent_file", [filename, data, kwargs]))
     
     def remove_torrent(self, torrent_id: str, remove_data: bool = False) -> None:
+        """Remove torrent with ID
+
+        Args:
+            torrent_id (str): Torrent ID to remove
+            remove_data (bool, optional): Remove all torrent data on host. Defaults to False.
+        """
         self._call("core.remove_torrent", [torrent_id, remove_data])
     
     def pause_torrent(self, torrent_id: str) -> None:
+        """Pauses torrent
+
+        Args:
+            torrent_id (str): Torrent to pause
+        """
         self._call("core.pause_torrent", [torrent_id])
     
     def resume_torrent(self, torrent_id: str) -> None:
+        """Resume torrent
+
+        Args:
+            torrent_id (str): Torrent to resume
+        """
         self._call("core.resume_torrent", [torrent_id])
+    
+    def list_torrents(self) -> list[Torrent]:
+        """List all current torrents
+
+        Returns:
+            list[Torrent]: List of Torrent objects
+        """
+        result_raw = self._call("core.get_session_state", [])
+        return map(lambda i: Torrent(self, i), result_raw)
 
