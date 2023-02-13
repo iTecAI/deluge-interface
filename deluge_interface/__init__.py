@@ -19,9 +19,23 @@ class Torrent:
     def __init__(self, deluge: "Deluge", torrent_id: str) -> None:
         self.deluge = deluge
         self.id = torrent_id
+        self.status: TorrentStatus = self.get_status()
     
-    def status(self) -> TorrentStatus:
-        return self.deluge._call("core.get_torrent_status", [self.id, []])
+    def get_status(self) -> TorrentStatus:
+        self.status = self.deluge._call("core.get_torrent_status", [self.id, []])
+        return self.status
+
+    @property
+    def paused(self) -> bool:
+        return self.status["paused"]
+    
+    def pause(self) -> None:
+        self.deluge.pause_torrent(self.id)
+        self.get_status()
+    
+    def resume(self) -> None:
+        self.deluge.resume_torrent(self.id)
+        self.get_status()
 
 class Deluge:
     JSON_PATH = "{host}/json"
@@ -116,13 +130,22 @@ class Deluge:
     def add_magnet(self, magnet: str, **kwargs) -> Torrent:
         return Torrent(self, self._call("core.add_torrent_magnet", [magnet, kwargs]))
     
-    def add_torrent_from_url(self, url: str, headers: dict = None, **kwargs) -> str:
+    def add_torrent_from_url(self, url: str, headers: dict = None, **kwargs) -> Torrent:
         return Torrent(self, self._call("core.add_torrent_url", [url, kwargs, headers]))
     
-    def add_torrent_from_file(self, *path, **kwargs) -> str:
+    def add_torrent_from_file(self, *path, **kwargs) -> Torrent:
         conpath = os.path.join(*path)
         filename = os.path.split(conpath)[1]
         with open(conpath, "rb") as f:
             data = base64.b64encode(f.read()).decode("utf-8")
             return Torrent(self, self._call("core.add_torrent_file", [filename, data, kwargs]))
+    
+    def remove_torrent(self, torrent_id: str, remove_data: bool = False) -> None:
+        self._call("core.remove_torrent", [torrent_id, remove_data])
+    
+    def pause_torrent(self, torrent_id: str) -> None:
+        self._call("core.pause_torrent", [torrent_id])
+    
+    def resume_torrent(self, torrent_id: str) -> None:
+        self._call("core.resume_torrent", [torrent_id])
 
