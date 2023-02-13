@@ -1,6 +1,9 @@
 import requests
 from typing import Any
 import json
+import base64
+import os
+from ._types import *
 
 USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0"
 
@@ -11,6 +14,14 @@ class DelugeException(ConnectionError):
 class AuthException(DelugeException):
     def __init__(self) -> None:
         super().__init__(-1, "Failed to authenticate.")
+
+class Torrent:
+    def __init__(self, deluge: "Deluge", torrent_id: str) -> None:
+        self.deluge = deluge
+        self.id = torrent_id
+    
+    def status(self) -> TorrentStatus:
+        return self.deluge._call("core.get_torrent_status", [self.id, []])
 
 class Deluge:
     JSON_PATH = "{host}/json"
@@ -102,5 +113,16 @@ class Deluge:
         """
         return self._call("system.listMethods", [])
     
-    def add_magnet(self, magnet: str) -> str:
-        return self._call("core.add_torrent_magnet", [magnet])
+    def add_magnet(self, magnet: str, **kwargs) -> Torrent:
+        return Torrent(self, self._call("core.add_torrent_magnet", [magnet, kwargs]))
+    
+    def add_torrent_from_url(self, url: str, headers: dict = None, **kwargs) -> str:
+        return Torrent(self, self._call("core.add_torrent_url", [url, kwargs, headers]))
+    
+    def add_torrent_from_file(self, *path, **kwargs) -> str:
+        conpath = os.path.join(*path)
+        filename = os.path.split(conpath)[1]
+        with open(conpath, "rb") as f:
+            data = base64.b64encode(f.read()).decode("utf-8")
+            return Torrent(self, self._call("core.add_torrent_file", [filename, data, kwargs]))
+
