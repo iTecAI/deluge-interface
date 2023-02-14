@@ -12,6 +12,10 @@ on:
   release:
     types: [published]
 
+defaults:
+  run:
+    working-directory: ./deluge_interface
+
 permissions:
   contents: read
 
@@ -31,9 +35,8 @@ jobs:
         python -m pip install --upgrade pip
         pip install build
     - name: Build package
-      run: python -m build deluge_interface
+      run: python -m build
     - name: Publish package
-      working-directory: ./deluge_interface
       uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
       with:
         user: __token__
